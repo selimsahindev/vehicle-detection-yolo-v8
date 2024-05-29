@@ -4,7 +4,8 @@ import cvzone
 import math
 from utils.sort import *
 
-cap = cv2.VideoCapture("./assets/video/traffic_flow.mp4")  # For Video
+# Load the video
+cap = cv2.VideoCapture("./assets/video/traffic_flow.mp4")
 
 # Load the model
 model = YOLO("./yolo/yolov8l.pt")
@@ -59,11 +60,15 @@ while True:
 
             # Get the class name
             cls = int(box.cls[0])
+
+            # Prevent the index out of range error
+            if (cls >= len(classNames)):
+                continue
+
             currentClass = classNames[cls]
 
             # Check if the class is a vehicle and the confidence is greater than 0.3
-            if currentClass == "car" or currentClass == "truck" or currentClass == "bus" \
-                    or currentClass == "motorbike" and conf > 0.3:
+            if classNames.count(currentClass) != 0 and conf > 0.3:
                 currentArray = np.array([x1, y1, x2, y2, conf])
                 detections = np.vstack((detections, currentArray))
 
@@ -74,10 +79,14 @@ while True:
     cv2.line(img, (limits[0], limits[1]), (limits[2], limits[3]), (90, 40, 40), 5)
 
     for result in resultsTracker:
+        # Get the coordinates of the bounding box
         x1, y1, x2, y2, id = result
+        # Convert the coordinates to integers
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-        print(result)
+        # Width and Height of the bounding box
         w, h = x2 - x1, y2 - y1
+
+        print(result)
 
         # Draw the bounding box around the vehicle
         cvzone.cornerRect(img, (x1, y1, w, h), l=0, t=1, rt=2, colorR=(0, 255, 0), colorC=(0, 255, 0))
@@ -96,11 +105,10 @@ while True:
                 totalCount.append(id)
                 cv2.line(img, (limits[0], limits[1]), (limits[2], limits[3]), (40, 140, 40), 5)
 
-
     # Draw the total count of vehicles
     # cv2.putText(img, str(len(totalCount)), (162, 70), cv2.FONT_HERSHEY_PLAIN, 4, (255, 70, 50), 5)
     cvzone.putTextRect(img, f' Count: {len(totalCount)} ', thickness=2, pos=(50, 75), colorR=(90, 40, 40))
 
     cv2.imshow("Image", img)
-    # cv2.imshow("ImageRegion", imgRegion) # Uncomment this line to see the masked region
+    cv2.imshow("ImageRegion", imgRegion) # Uncomment this line to see the masked region
     cv2.waitKey(1)
